@@ -9,15 +9,15 @@
 
 team_t team = {
     /* Team name */
-    "---",
+    " ",
     /* First member's full name */
     "PwnSolo",
     /* First member's email address */
-    "---",
+    " ",
     /* Second member's full name (leave blank if none) */
-    "",
+    " ",
     /* Second member's email address (leave blank if none) */
-    ""
+    " "
 };
 
 /* single word (4) or double word (8) alignment */
@@ -28,12 +28,15 @@ team_t team = {
 #define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
 
 struct block{
-    size_t size;
-    int free;
-    int val;
-    struct block* next;
+    size_t data; //(size + free)
+    struct block* next; 
+
 };
 
+int set_value(int used_chunks,int free) //
+{
+    return used_chunks*0x10 + free;
+}
 /* 
  * mm_init - initialize the malloc package.
  */
@@ -48,15 +51,13 @@ int mm_init(void)
  */
 void *mm_malloc(size_t size)
 {
-    int newsize = ALIGN(size + SIZE_T_SIZE);
-    //int newsize = size + 4-(size%4); 
+    int newsize = ALIGN(size);
     
     struct block* head = NULL;
+
     head = mem_sbrk(sizeof(struct block));
-    
-    head->size = size;
-    head->free = 1;
-    head->val = newsize;
+
+    head->data = set_value(newsize/4,1);
     void *payload = mem_sbrk(newsize);
     head->next = mem_sbrk(0);
 
@@ -72,6 +73,7 @@ void *mm_malloc(size_t size)
  */
 void mm_free(void *ptr)
 {
+    
 }
 
 /*
