@@ -25,7 +25,7 @@ team_t team = {
 /* rounds up to the nearest multiple of ALIGNMENT */
 #define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~0x7)
 
-#define SIZE_T_SIZE (ALIGN(sizeof(size_t)))
+#define SIZE_T_SIZE (ALIGN(sizeof(size_t))) 
 
 struct block{
     size_t data; //(size + free)
@@ -33,10 +33,16 @@ struct block{
 
 };
 
-int set_value(int used_chunks,int free) //
+int set_allocated(int used_chunks) //no of chunks + 0x1 (used)
 {
-    return used_chunks*0x10 + free;
+    return used_chunks*0x10 + 0x1;
 }
+
+void set_free(int *head_ptr)       //no of chunks + 0x0 (free)
+{
+    *head_ptr = *head_ptr - 0x1;
+}
+
 /* 
  * mm_init - initialize the malloc package.
  */
@@ -48,18 +54,21 @@ int mm_init(void)
 /* 
  * mm_malloc - Allocate a block by incrementing the brk pointer.
  *     Always allocate a block whose size is a multiple of the alignment.
- */
+ */\
+
 void *mm_malloc(size_t size)
 {
     int newsize = ALIGN(size);
-    
     struct block* head = NULL;
 
-    head = mem_sbrk(sizeof(struct block));
+    int used_chunks = newsize/4;        //1 chunk = 4 bytes (32-bit), 8 bytes (64-bit) 
 
-    head->data = set_value(newsize/4,1);
+    head = mem_sbrk(sizeof(struct block));
+    
+    head->data = set_allocated(used_chunks);
+    
     void *payload = mem_sbrk(newsize);
-    head->next = mem_sbrk(0);
+    head->next = mem_sbrk(0);           // pts to the header of the next block
 
     if (payload == (void *)-1)
         return NULL;
@@ -73,9 +82,14 @@ void *mm_malloc(size_t size)
  */
 void mm_free(void *ptr)
 {
+    int *head_ptr = ptr - 8;
+    if ((*head_ptr)%2==0)
+        printf("Block is not allcated yet"); // if block is not allocated ; dont free
     
+    else{
+        set_free(head_ptr);
+    }
 }
-
 /*
  * mm_realloc - Implemented simply in terms of mm_malloc and mm_free
  */
@@ -95,3 +109,17 @@ void *mm_realloc(void *ptr, size_t size)
     mm_free(oldptr);
     return newptr;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
